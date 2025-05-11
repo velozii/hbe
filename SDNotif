@@ -1,0 +1,26 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+
+local function checkForModel()
+    local ignoredFolder = Workspace:FindFirstChild("Ignored")
+    if ignoredFolder then
+        local lootDropModel = ignoredFolder:FindFirstChild("LOOT_DROP")
+        if lootDropModel then
+            return true
+        end
+    end
+    return false
+end
+
+local function createNotificationPart()
+   game:GetService("StarterGui"):SetCore("SendNotification",{
+	Title = "Airdrop Drop", -- Required
+	Text = "Airdrop drop found!", -- Required
+	Icon = "rbxassetid://88320771946690" -- Optional
+})
+end
+
+if checkForModel() then
+    createNotificationPart()
+end
