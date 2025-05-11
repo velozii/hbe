@@ -1,26 +1,58 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
+local StarterGui = game:GetService("StarterGui")
+local Players = game:GetService("Players")
+local duration = 24 * 60 * 60 -- 24 hours in seconds
+local startTime = os.time()
 
-local function checkForModel()
+-- State tracking
+local wasLootPresent = false
+local hasNotifiedCurrentSpawn = false
+
+local function sendNotification(title, text, icon)
+    StarterGui:SetCore("SendNotification", {
+        Title = title,
+        Text = text,
+        Icon = icon,
+        Duration = 5
+    })
+end
+
+repeat
     local ignoredFolder = Workspace:FindFirstChild("Ignored")
-    if ignoredFolder then
-        local lootDropModel = ignoredFolder:FindFirstChild("LOOT_DROP")
-        if lootDropModel then
-            return true
-        end
+    local currentLoot = ignoredFolder and ignoredFolder:FindFirstChild("LOOT_DROP")
+    local isLootPresent = currentLoot and currentLoot:IsA("Model")
+
+    -- Detect new spawn
+    if isLootPresent and not wasLootPresent and not hasNotifiedCurrentSpawn then
+        sendNotification(
+            "Airdrop Incoming!",
+            "New airdrop has spawned!",
+            "rbxassetid://88320771946690" -- Replace with your icon
+        )
+        hasNotifiedCurrentSpawn = true
     end
-    return false
-end
 
-local function createNotificationPart()
-   game:GetService("StarterGui"):SetCore("SendNotification",{
-	Title = "Airdrop Drop", -- Required
-	Text = "Airdrop drop found!", -- Required
-	Icon = "rbxassetid://88320771946690" -- Optional
-})
-end
+    -- Detect loot removal
+    if wasLootPresent and not isLootPresent then
+        -- Check all players' inventories
+        for _, player in ipairs(Players:GetPlayers()) do
+            local backpack = player:FindFirstChild("Backpack")
+            if backpack and backpack:FindFirstChild("Cannon") then
+                sendNotification(
+                    "Airdrop taken!",
+                    player.Name .. " has cannon!",
+                    "rbxassetid://88320771946690" -- Your claimed icon
+                )
+            end
+        end
+        
+        -- Reset for next spawn
+        hasNotifiedCurrentSpawn = false
+    end
 
-if checkForModel() then
-    createNotificationPart()
-end
+    -- Update previous state
+    wasLootPresent = isLootPresent
+    wait(1)
+until os.time() - startTime >= duration
+
+print("24-hour airdrop cycle completed")
